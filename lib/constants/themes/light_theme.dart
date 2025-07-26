@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_two_themes/themes/app_color.dart';
+import 'package:flutter_login_two_themes/constants/themes/app_color.dart';
 
 ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,

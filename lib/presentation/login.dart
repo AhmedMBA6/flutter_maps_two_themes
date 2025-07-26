@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_two_themes/themes/theme_model.dart';
+import 'package:flutter_login_two_themes/constants/themes/theme_model.dart';
 import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
