@@ -3,7 +3,6 @@ import 'package:flutter_login_two_themes/themes/app_color.dart';
 
 ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    dialogBackgroundColor: AppColor.bodyColorDark,
     scaffoldBackgroundColor: AppColor.bodyColorDark,
     hintColor: AppColor.textColorDark,
     primaryColorLight: AppColor.buttonBackgroundColorDark,
@@ -11,4 +10,4 @@ ThemeData darkTheme = ThemeData(
         headlineLarge: TextStyle(
             color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
     buttonTheme: const ButtonThemeData(
-        textTheme: ButtonTextTheme.primary, buttonColor: Colors.white));
+        textTheme: ButtonTextTheme.primary, buttonColor: Colors.white), dialogTheme: DialogThemeData(backgroundColor: AppColor.bodyColorDark));
