@@ -1,14 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_two_themes/constants/themes/app_color.dart';
+import 'app_colors.dart';
 
-ThemeData lightTheme = ThemeData(
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: AppColor.bodyColor,
-    hintColor: AppColor.textColor,
-    primaryColorLight: AppColor.buttonBackgroundColor,
-    textTheme: const TextTheme(
-      headlineLarge: TextStyle(
-          color: Colors.black, fontSize: 40, fontWeight: FontWeight.bold),
+final ThemeData lightTheme = ThemeData(
+  brightness: Brightness.light,
+  scaffoldBackgroundColor: AppColors.backgroundLight,
+  primaryColor: AppColors.primary,
+  appBarTheme: const AppBarTheme(
+    backgroundColor: AppColors.backgroundLight,
+    foregroundColor: AppColors.foregroundLight,
+    elevation: 0,
+  ),
+  colorScheme: const ColorScheme.light(
+    primary: AppColors.primary,
+    secondary: AppColors.primaryLight,
+    surface: AppColors.cardLight,
+    error: AppColors.error,
+    onPrimary: AppColors.foregroundLight,
+    onSecondary: AppColors.foregroundLight,
+    onSurface: AppColors.foregroundLight,
+    onError: Colors.white,
+  ),
+  textTheme: const TextTheme(
+    bodyLarge: TextStyle(color: AppColors.foregroundLight),
+    bodyMedium: TextStyle(color: AppColors.foregroundLight),
+    labelLarge: TextStyle(color: AppColors.foregroundLight),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: AppColors.inputBackgroundLight,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.borderLight),
     ),
-    buttonTheme: const ButtonThemeData(
-        textTheme: ButtonTextTheme.primary, buttonColor: Colors.black), dialogTheme: DialogThemeData(backgroundColor: AppColor.bodyColor));
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.primary),
+    ),
+  ),
+);
