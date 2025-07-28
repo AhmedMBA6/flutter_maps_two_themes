@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_login_two_themes/constants/themes/theme_preference.dart';
+import 'theme_preference.dart';
 
-class ThemeModel extends ChangeNotifier{
+class ThemeModel extends ChangeNotifier {
   bool _isDark = false;
-  late ThemePreference  _preference;
+  final ThemePreference _preference = ThemePreference();
+
   bool get isDark => _isDark;
-  ThemeModel () {
-    _isDark = false;
-    _preference = ThemePreference();
+
+  ThemeModel() {
     getPreferences();
   }
-  set isDark(bool value){
+
+  set isDark(bool value) {
     _isDark = value;
     _preference.setTheme(value);
     notifyListeners();
   }
-  getPreferences() async{
+
+  Future<void> getPreferences() async {
     _isDark = await _preference.getTheme();
     notifyListeners();
   }
-
 }
