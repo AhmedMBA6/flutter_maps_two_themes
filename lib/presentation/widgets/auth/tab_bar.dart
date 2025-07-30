@@ -48,7 +48,7 @@ class AuthTabBar extends StatelessWidget {
             ),
             indicatorSize: TabBarIndicatorSize.tab,
             dividerColor: Colors.transparent,
-            overlayColor: MaterialStateProperty.all(Colors.transparent),
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
             labelStyle: const TextStyle(
               fontSize: 16, 
               fontWeight: FontWeight.w600,

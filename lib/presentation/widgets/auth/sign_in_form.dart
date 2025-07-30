@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../constants/themes/app_colors.dart';
+import '../../../constants/themes/app_text_styles.dart';
+import '../../../constants/widgets/unified_container.dart';
+import '../../../constants/widgets/app_button.dart';
 import 'custom_text_form_field.dart';
 import 'password_form_field.dart';
 
@@ -12,41 +15,23 @@ class SignInForm extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.gray700 : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
+      child: UnifiedContainer(
+        padding: const EdgeInsets.all(32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Welcome Back',
-              style: TextStyle(
+              style: AppTextStyles.titleLarge.copyWith(
                 fontSize: 28,
-                fontWeight: FontWeight.w700,
                 color: isDark ? Colors.white : AppColors.gray900,
-                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Sign in to access your saved places and history',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: isDark ? Colors.white70 : AppColors.gray600,
-                height: 1.4,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: isDark ? Colors.white.withValues(alpha: 0.8) : AppColors.gray600,
               ),
               textAlign: TextAlign.center,
             ),
@@ -63,56 +48,14 @@ class SignInForm extends StatelessWidget {
                   const SizedBox(height: 20),
                   const PasswordFormField(label: 'Password'),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(52),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.black : Colors.white,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
+                  PrimaryButton(
+                    text: "Sign In",
+                    onPressed: () {},
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor:
-                            isDark ? AppColors.gray700 : Colors.white,
-                        foregroundColor: isDark ? Colors.white : AppColors.gray900,
-                        side: BorderSide(
-                          color: isDark ? Colors.white24 : AppColors.gray300,
-                          width: 1.5,
-                        ),
-                        minimumSize: const Size.fromHeight(52),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Continue as Guest",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600, 
-                          fontSize: 16,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
+                  SecondaryButton(
+                    text: "Continue as Guest",
+                    onPressed: () {},
                   ),
                 ],
               ),
