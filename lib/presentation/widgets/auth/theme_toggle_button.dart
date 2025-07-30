@@ -13,7 +13,7 @@ class ThemeToggleButton extends StatelessWidget {
     final themeModel = Provider.of<ThemeModel>(context);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16, right: 16),
+      padding: const EdgeInsets.only(top: 12, right: 6),
       child: Align(
         alignment: Alignment.topRight,
         child: IconButton(

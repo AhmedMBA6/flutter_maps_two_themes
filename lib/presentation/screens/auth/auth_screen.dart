@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../constants/widgets/background_wrapper.dart';
+import '../../../constants/widgets/icon_container.dart';
+import '../../../constants/widgets/feature_icon.dart';
 import '../../../constants/themes/app_colors.dart';
+
+import '../../widgets/auth/tab_bar.dart';
 import '../../widgets/auth/sign_in_form.dart';
 import '../../widgets/auth/sign_up_form.dart';
-import '../../widgets/auth/tab_bar.dart';
-import '../../widgets/auth/theme_toggle_button.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -49,36 +51,15 @@ class _AuthScreenState extends State<AuthScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          ThemeToggleButton(),
-                          SizedBox(width: 8),
-                        ],
-                      ),
                       // Top icon and texts
                       const SizedBox(height: 24),
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.shadowColor.withValues(alpha: 0.10),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.near_me_outlined,
-                            color: isDark ? Colors.black : Colors.white,
-                            size: 44,
-                          ),
-                        ),
+                      IconContainer(
+                        icon: Icons.near_me_outlined,
+                        size: 80,
+                        iconSize: 44,
+                        backgroundColor: AppColors.primary,
+                        iconColor: isDark ? Colors.black : Colors.white,
+                        borderRadius: 20,
                       ),
                       const SizedBox(height: 28),
                       Text(
@@ -126,19 +107,19 @@ class _AuthScreenState extends State<AuthScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _FeatureIcon(
+                            FeatureIcon(
                               icon: Icons.place_outlined,
                               label: 'Discover Places',
                               iconColor: AppColors.discoverPlacesIcon,
                               bgColor: AppColors.discoverPlacesBg,
                             ),
-                            _FeatureIcon(
+                            FeatureIcon(
                               icon: Icons.directions,
                               label: 'Get Directions',
                               iconColor: AppColors.getDirectionsIcon,
                               bgColor: AppColors.getDirectionsBg,
                             ),
-                            _FeatureIcon(
+                            FeatureIcon(
                               icon: Icons.favorite_border,
                               label: 'Save Favorites',
                               iconColor: AppColors.saveFavoritesIcon,
@@ -156,61 +137,6 @@ class _AuthScreenState extends State<AuthScreen>
           ),
         ),
       ),
-    );
-  }
-}
-
-class _FeatureIcon extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color iconColor;
-  final Color bgColor;
-  
-  const _FeatureIcon({
-    required this.icon, 
-    required this.label, 
-    required this.iconColor, 
-    required this.bgColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: isDark ? iconColor.withValues(alpha: 0.2) : bgColor,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: isDark 
-                    ? Colors.black.withValues(alpha: 0.2) 
-                    : Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon, 
-            size: 28, 
-            color: iconColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: isDark ? Colors.white : AppColors.gray700,
-          ),
-        ),
-      ],
     );
   }
 }
