@@ -4,10 +4,14 @@ import '../../../constants/themes/app_colors.dart';
 class PasswordFormField extends StatefulWidget {
   final String label;
   final String? hintText;
+  final TextEditingController? controller;
+  final String? Function(String?)? validator;
 
   const PasswordFormField({
     required this.label, 
     this.hintText,
+    this.controller,
+    this.validator,
     super.key,
   });
 
@@ -35,7 +39,9 @@ class _PasswordFormFieldState extends State<PasswordFormField> {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          controller: widget.controller,
           obscureText: _obscure,
+          validator: widget.validator,
           decoration: InputDecoration(
             prefixIcon: Icon(
               Icons.lock_outline,

@@ -12,8 +12,13 @@ class Country {
 
 class PhoneFormField extends StatefulWidget {
   final TextEditingController controller;
+  final Function(String)? onCountryCodeChanged;
 
-  const PhoneFormField({super.key, required this.controller});
+  const PhoneFormField({
+    super.key, 
+    required this.controller,
+    this.onCountryCodeChanged,
+  });
 
   @override
   State<PhoneFormField> createState() => _PhoneFormFieldState();
@@ -54,6 +59,8 @@ class _PhoneFormFieldState extends State<PhoneFormField> {
               setState(() {
                 selectedCountry = newCountry;
               });
+              // Notify parent about country code change
+              widget.onCountryCodeChanged?.call(newCountry.dialCode);
             }
           },
           items: countries.map((country) {

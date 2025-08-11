@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../constants/widgets/background_wrapper.dart';
+import '../../../logic_layer/auth/auth_cubit.dart';
+import '../../../logic_layer/auth/auth_state.dart';
 import '../../widgets/auth/otp_header.dart';
 import '../../widgets/auth/otp_form_card.dart';
 import '../../widgets/auth/try_different_phone_link.dart';
@@ -7,7 +10,23 @@ import '../../widgets/auth/secure_verification_card.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phoneNumber;
-  const OtpScreen({super.key, required this.phoneNumber});
+  final String verificationId;
+  final String countryCode;
+  final bool isSignUp; // Add mode parameter
+  final String? fullName; // Add sign-up fields
+  final String? email;
+  final String? password;
+  
+  const OtpScreen({
+    super.key, 
+    required this.phoneNumber,
+    required this.verificationId,
+    required this.countryCode,
+    this.isSignUp = false, // Default to sign-in mode
+    this.fullName,
+    this.email,
+    this.password,
+  });
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -20,10 +39,13 @@ class _OtpScreenState extends State<OtpScreen> {
   bool _isVerifying = false;
   bool _hasError = false;
   String? _errorMessage;
+  String _currentVerificationId = ''; // Track current verification ID
+  bool _isResending = false; // Track resend state
 
   @override
   void initState() {
     super.initState();
+    _currentVerificationId = widget.verificationId;
     _startTimer();
   }
 
@@ -51,26 +73,25 @@ class _OtpScreenState extends State<OtpScreen> {
       _errorMessage = null;
     });
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() {
-        _isVerifying = false;
-      });
-
-      // Check if the code is correct (demo: 123456)
-      final enteredCode = _otpController.text;
-      if (enteredCode == "123456") {
-        // Navigate to home screen
-        Navigator.of(context).pushReplacementNamed('/home');
-      } else {
-        // Show error state
-        setState(() {
-          _hasError = true;
-          _errorMessage = "Invalid verification code. Try again or use 123456 for demo.";
-        });
-      }
+    if (widget.isSignUp) {
+      // Use sign-up verification for new accounts
+      context.read<AuthCubit>().verifyOtpForSignUp(
+        phoneNumber: widget.phoneNumber,
+        countryCode: widget.countryCode,
+        verificationId: _currentVerificationId,
+        smsCode: _otpController.text,
+        fullName: widget.fullName!,
+        email: widget.email!,
+        password: widget.password!,
+      );
+    } else {
+      // Use sign-in verification for existing users
+      context.read<AuthCubit>().verifyOtpForSignIn(
+        phoneNumber: widget.phoneNumber,
+        countryCode: widget.countryCode,
+        verificationId: _currentVerificationId,
+        smsCode: _otpController.text,
+      );
     }
   }
 
@@ -99,57 +120,122 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _handleResendCode() {
+    if (_isResending) return; // Prevent multiple resend attempts
+    
     setState(() {
+      _isResending = true;
       _timer = 30;
+      _hasError = false;
+      _errorMessage = null;
+      _otpController.clear(); // Clear the OTP input
     });
+    
     _startTimer();
-  }
-
-  void _handleTryDifferentPhone() {
-    // Navigate back to sign up form
-    Navigator.of(context).pop();
+    
+    if (widget.isSignUp) {
+      // Use sign-up OTP sending for new accounts
+      context.read<AuthCubit>().sendOtpForSignUp(
+        phoneNumber: widget.phoneNumber,
+        countryCode: widget.countryCode,
+      );
+    } else {
+      // Use sign-in OTP sending for existing users
+      context.read<AuthCubit>().sendOtpForSignIn(
+        phoneNumber: widget.phoneNumber,
+        countryCode: widget.countryCode,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AppBackground(
-        showThemeToggle: true,
-        showBackButton: true,
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is SignInSuccess) {
+          // Navigate to home screen for sign-in
+          Navigator.of(context).pushReplacementNamed('/home');
+        } else if (state is SignUpSuccess) {
+          // Show success message and navigate to home screen for sign-up
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          
+          // Navigate to home screen after successful sign-up
+          Navigator.of(context).pushReplacementNamed('/home');
+        } else if (state is OtpSentSuccess) {
+          // Update verification ID and show success message
+          setState(() {
+            _currentVerificationId = state.verificationId;
+            _isResending = false;
+            _hasError = false;
+            _errorMessage = null;
+          });
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else if (state is AuthError) {
+          // Show error message
+          setState(() {
+            _isVerifying = false;
+            _isResending = false;
+            _hasError = true;
+            _errorMessage = state.message;
+          });
+        } else if (state is ValidationError) {
+          // Show validation error
+          setState(() {
+            _isVerifying = false;
+            _isResending = false;
+            _hasError = true;
+            _errorMessage = 'Please enter a valid OTP code';
+          });
+        }
+      },
+      child: AppBackground(
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Header Section
-                  OtpHeader(phoneNumber: widget.phoneNumber),
-                  
-                  // Main Form Card
-                  OtpFormCard(
-                    otpController: _otpController,
-                    isButtonEnabled: _isButtonEnabled,
-                    isVerifying: _isVerifying,
-                    timer: _timer,
-                    hasError: _hasError,
-                    errorMessage: _errorMessage,
-                    onOtpChanged: _handleOtpChanged,
-                    onOtpCompleted: _handleOtpCompleted,
-                    onVerifyCode: _verifyCode,
-                    onResendCode: _handleResendCode,
-                  ),
-                  const SizedBox(height: 18),
-
-                  // Try Different Phone Link
-                  TryDifferentPhoneLink(
-                    onTryDifferentPhone: _handleTryDifferentPhone,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Secure Verification Card
-                  const SecureVerificationCard(),
-                  const SizedBox(height: 32),
-                ],
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OtpHeader(phoneNumber: widget.phoneNumber),
+                    const SizedBox(height: 32),
+                    OtpFormCard(
+                      onOtpChanged: _handleOtpChanged,
+                      onOtpCompleted: _handleOtpCompleted,
+                      otpController: _otpController,
+                      isButtonEnabled: _isButtonEnabled,
+                      isVerifying: _isVerifying,
+                      hasError: _hasError,
+                      errorMessage: _errorMessage,
+                      onVerifyCode: _verifyCode,
+                      onResendCode: _handleResendCode,
+                      timer: _timer,
+                      isResending: _isResending, // Pass resending state
+                    ),
+                    const SizedBox(height: 24),
+                    TryDifferentPhoneLink(
+                      onTryDifferentPhone: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    const SecureVerificationCard(),
+                  ],
+                ),
               ),
             ),
           ),

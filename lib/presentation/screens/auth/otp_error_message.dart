@@ -28,7 +28,7 @@ class OtpErrorMessage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             size: 16,
             color: AppColors.error,
