@@ -5,11 +5,15 @@ class CustomTextFormField extends StatelessWidget {
   final String label;
   final String hint;
   final IconData prefixIcon;
+  final TextEditingController? controller;
+  final String? Function(String?)? validator;
 
   const CustomTextFormField({
     required this.label,
     required this.hint,
     required this.prefixIcon,
+    this.controller,
+    this.validator,
     super.key,
   });
 
@@ -30,6 +34,8 @@ class CustomTextFormField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          controller: controller,
+          validator: validator,
           decoration: InputDecoration(
             prefixIcon: Icon(
               prefixIcon,

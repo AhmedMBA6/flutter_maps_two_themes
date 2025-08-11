@@ -14,6 +14,7 @@ class OtpFormCard extends StatelessWidget {
   final int timer;
   final bool hasError;
   final String? errorMessage;
+  final bool isResending; // Add resending state
   final Function(String) onOtpChanged;
   final Function(String)? onOtpCompleted;
   final VoidCallback onVerifyCode;
@@ -27,6 +28,7 @@ class OtpFormCard extends StatelessWidget {
     required this.timer,
     this.hasError = false,
     this.errorMessage,
+    this.isResending = false, // Default to false
     required this.onOtpChanged,
     required this.onOtpCompleted,
     required this.onVerifyCode,
@@ -98,6 +100,7 @@ class OtpFormCard extends StatelessWidget {
             ResendCodeSection(
               timer: timer,
               onResendCode: onResendCode,
+              isResending: isResending, // Pass the new state
             ),
             const SizedBox(height: 24),
 
