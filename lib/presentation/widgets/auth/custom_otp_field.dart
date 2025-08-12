@@ -102,7 +102,6 @@ class _CustomOtpFieldState extends State<CustomOtpField> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textTheme = theme.textTheme;
 
     // Colors based on design
     final activeColor = widget.activeColor ?? AppColors.primary;

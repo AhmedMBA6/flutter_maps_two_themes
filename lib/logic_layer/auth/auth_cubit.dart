@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../data_layer/repos/auth/auth_repository_export.dart';
-import '../../data_layer/models/auth/user_model.dart';
 import 'auth_state.dart';
+import '../../utils/logger.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepositoryInterface _authRepository;
@@ -54,7 +54,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String countryCode,
   }) async {
     try {
-      print('AuthCubit: Starting sign up process for email: $email');
+      Logger.info('AuthCubit: Starting sign up process for email: $email');
       emit(const AuthLoading());
 
       // Validate input data
@@ -68,12 +68,12 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       if (!AuthValidationService.isFormValid(validationErrors)) {
-        print('AuthCubit: Validation errors found: $validationErrors');
+        Logger.warning('AuthCubit: Validation errors found: $validationErrors');
         emit(ValidationError(validationErrors));
         return;
       }
 
-      print('AuthCubit: Validation passed, calling repository...');
+      Logger.debug('AuthCubit: Validation passed, calling repository...');
 
       // Create user with email and password
       final user = await _authRepository.signUpWithEmail(
@@ -84,10 +84,10 @@ class AuthCubit extends Cubit<AuthState> {
         countryCode: countryCode,
       );
 
-      print('AuthCubit: User created successfully: ${user.id}');
+      Logger.success('AuthCubit: User created successfully: ${user.id}');
       emit(SignUpSuccess(user, 'Account created successfully! Please verify your email.'));
     } catch (e) {
-      print('AuthCubit: Error in signUpWithEmail: $e');
+      Logger.error('AuthCubit: Error in signUpWithEmail: $e');
       
       // Handle specific error messages
       String errorMessage = e.toString();
@@ -192,7 +192,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String countryCode,
   }) async {
     try {
-      print('AuthCubit: Sending OTP for phone: $phoneNumber, country: $countryCode');
+      Logger.info('AuthCubit: Sending OTP for phone: $phoneNumber, country: $countryCode');
       emit(const AuthLoading());
 
       // Validate phone number
@@ -202,21 +202,21 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       if (!AuthValidationService.isFormValid(validationErrors)) {
-        print('AuthCubit: Validation errors found: $validationErrors');
+        Logger.warning('AuthCubit: Validation errors found: $validationErrors');
         emit(ValidationError(validationErrors));
         return;
       }
 
       final fullPhoneNumber = '$countryCode$phoneNumber';
-      print('AuthCubit: Full phone number: $fullPhoneNumber');
-      print('AuthCubit: Country code: $countryCode, Phone: $phoneNumber');
-      print('AuthCubit: Phone number length: ${phoneNumber.length}');
-      print('AuthCubit: Full phone number length: ${fullPhoneNumber.length}');
+      Logger.debug('AuthCubit: Full phone number: $fullPhoneNumber');
+      Logger.debug('AuthCubit: Country code: $countryCode, Phone: $phoneNumber');
+      Logger.debug('AuthCubit: Phone number length: ${phoneNumber.length}');
+      Logger.debug('AuthCubit: Full phone number length: ${fullPhoneNumber.length}');
 
       await _authRepository.sendOTP(
         phoneNumber: fullPhoneNumber,
         onCodeSent: (verificationId) {
-          print('AuthCubit: OTP sent successfully with verification ID: $verificationId');
+          Logger.success('AuthCubit: OTP sent successfully with verification ID: $verificationId');
           emit(OtpSentSuccess(
             verificationId,
             fullPhoneNumber,
@@ -224,12 +224,12 @@ class AuthCubit extends Cubit<AuthState> {
           ));
         },
         onError: (error) {
-          print('AuthCubit: OTP sending failed: $error');
+          Logger.error('AuthCubit: OTP sending failed: $error');
           emit(AuthError('Failed to send OTP: $error'));
         },
       );
     } catch (e) {
-      print('AuthCubit: Error in sendOtpForSignIn: $e');
+      Logger.error('AuthCubit: Error in sendOtpForSignIn: $e');
       emit(AuthError('Failed to send OTP: ${e.toString()}'));
     }
   }
@@ -242,19 +242,19 @@ class AuthCubit extends Cubit<AuthState> {
     required String smsCode,
   }) async {
     try {
-      print('AuthCubit: Verifying OTP for phone sign-in, phone: $phoneNumber');
+      Logger.info('AuthCubit: Verifying OTP for phone sign-in, phone: $phoneNumber');
       emit(const AuthLoading());
 
       // Validate OTP
       final validationErrors = AuthValidationService.validateOTP(smsCode);
       if (validationErrors.isNotEmpty) {
-        print('AuthCubit: OTP validation errors: $validationErrors');
+        Logger.warning('AuthCubit: OTP validation errors: $validationErrors');
         emit(ValidationError(validationErrors));
         return;
       }
 
       final fullPhoneNumber = '$countryCode$phoneNumber';
-      print('AuthCubit: Full phone number: $fullPhoneNumber');
+      Logger.debug('AuthCubit: Full phone number: $fullPhoneNumber');
 
       // Verify OTP and sign in
       final user = await _authRepository.signInWithPhone(
@@ -264,14 +264,14 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       if (user != null) {
-        print('AuthCubit: Phone sign-in successful for user: ${user.id}');
+        Logger.success('AuthCubit: Phone sign-in successful for user: ${user.id}');
         emit(SignInSuccess(user, 'Phone verification successful!'));
       } else {
-        print('AuthCubit: Phone sign-in failed - no user returned');
+        Logger.warning('AuthCubit: Phone sign-in failed - no user returned');
         emit(const AuthError('Invalid OTP code'));
       }
     } catch (e) {
-      print('AuthCubit: Error in verifyOtpForSignIn: $e');
+      Logger.error('AuthCubit: Error in verifyOtpForSignIn: $e');
       
       // Provide better error messages for common scenarios
       String errorMessage = e.toString();
@@ -297,7 +297,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String countryCode,
   }) async {
     try {
-      print('AuthCubit: Sending OTP for sign-up, phone: $phoneNumber, country: $countryCode');
+      Logger.info('AuthCubit: Sending OTP for sign-up, phone: $phoneNumber, country: $countryCode');
       emit(const AuthLoading());
 
       // Validate phone number
@@ -307,21 +307,21 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       if (!AuthValidationService.isFormValid(validationErrors)) {
-        print('AuthCubit: Validation errors found: $validationErrors');
+        Logger.warning('AuthCubit: Validation errors found: $validationErrors');
         emit(ValidationError(validationErrors));
         return;
       }
 
       final fullPhoneNumber = '$countryCode$phoneNumber';
-      print('AuthCubit: Full phone number: $fullPhoneNumber');
-      print('AuthCubit: Country code: $countryCode, Phone: $phoneNumber');
-      print('AuthCubit: Phone number length: ${phoneNumber.length}');
-      print('AuthCubit: Full phone number length: ${fullPhoneNumber.length}');
+      Logger.debug('AuthCubit: Full phone number: $fullPhoneNumber');
+      Logger.debug('AuthCubit: Country code: $countryCode, Phone: $phoneNumber');
+      Logger.debug('AuthCubit: Phone number length: ${phoneNumber.length}');
+      Logger.debug('AuthCubit: Full phone number length: ${fullPhoneNumber.length}');
 
       await _authRepository.sendOTP(
         phoneNumber: fullPhoneNumber,
         onCodeSent: (verificationId) {
-          print('AuthCubit: OTP sent successfully for sign-up with verification ID: $verificationId');
+          Logger.success('AuthCubit: OTP sent successfully for sign-up with verification ID: $verificationId');
           emit(OtpSentSuccess(
             verificationId,
             fullPhoneNumber,
@@ -329,12 +329,12 @@ class AuthCubit extends Cubit<AuthState> {
           ));
         },
         onError: (error) {
-          print('AuthCubit: OTP sending failed for sign-up: $error');
+          Logger.error('AuthCubit: OTP sending failed for sign-up: $error');
           emit(AuthError('Failed to send OTP: $error'));
         },
       );
     } catch (e) {
-      print('AuthCubit: Error in sendOtpForSignUp: $e');
+      Logger.error('AuthCubit: Error in sendOtpForSignUp: $e');
       emit(AuthError('Failed to send OTP: ${e.toString()}'));
     }
   }
@@ -350,19 +350,19 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
   }) async {
     try {
-      print('AuthCubit: Verifying OTP for sign-up, phone: $phoneNumber');
+      Logger.info('AuthCubit: Verifying OTP for sign-up, phone: $phoneNumber');
       emit(const AuthLoading());
 
       // Validate OTP
       final validationErrors = AuthValidationService.validateOTP(smsCode);
       if (validationErrors.isNotEmpty) {
-        print('AuthCubit: OTP validation errors: $validationErrors');
+        Logger.warning('AuthCubit: OTP validation errors: $validationErrors');
         emit(ValidationError(validationErrors));
         return;
       }
 
       final fullPhoneNumber = '$countryCode$phoneNumber';
-      print('AuthCubit: Full phone number: $fullPhoneNumber');
+      Logger.debug('AuthCubit: Full phone number: $fullPhoneNumber');
 
       // Verify OTP and create user
       final user = await _authRepository.signUpWithPhone(
@@ -374,10 +374,10 @@ class AuthCubit extends Cubit<AuthState> {
         smsCode: smsCode,
       );
 
-      print('AuthCubit: User created successfully with phone verification: ${user.id}');
+      Logger.success('AuthCubit: User created successfully with phone verification: ${user.id}');
       emit(SignUpSuccess(user, 'Account created successfully!'));
     } catch (e) {
-      print('AuthCubit: Error in verifyOtpForSignUp: $e');
+      Logger.error('AuthCubit: Error in verifyOtpForSignUp: $e');
       emit(AuthError('Failed to create account: ${e.toString()}'));
     }
   }

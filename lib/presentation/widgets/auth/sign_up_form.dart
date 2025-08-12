@@ -38,16 +38,7 @@ class _SignUpFormState extends State<SignUpForm> {
     }
   }
 
-  void _verifyEmailAndPhone() {
-    // Use AuthCubit to create account with email and password
-    context.read<AuthCubit>().signUpWithEmail(
-      fullName: _fullNameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      phoneNumber: _phoneController.text.trim(),
-      countryCode: _selectedCountryCode,
-    );
-  }
+
 
   void _onCountryCodeChanged(String countryCode) {
     setState(() {
@@ -117,7 +108,7 @@ class _SignUpFormState extends State<SignUpForm> {
         } else if (state is ValidationError) {
           // Show validation error
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Please fix the validation errors'),
               backgroundColor: Colors.orange,
             ),
@@ -152,7 +143,7 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     const SizedBox(height: 32),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Column(
                         children: [
                           CustomTextFormField(

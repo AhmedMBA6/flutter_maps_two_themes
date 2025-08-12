@@ -11,8 +11,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is SignOutSuccess) {
