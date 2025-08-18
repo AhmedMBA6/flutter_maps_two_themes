@@ -258,7 +258,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       // Verify OTP and sign in
       final user = await _authRepository.signInWithPhone(
-        phoneNumber: fullPhoneNumber,
+        phoneNumber: phoneNumber,
         verificationId: verificationId,
         smsCode: smsCode,
       );
