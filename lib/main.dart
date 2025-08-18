@@ -6,6 +6,7 @@ import 'package:flutter_login_two_themes/constants/themes/app_theme.dart';
 import 'package:flutter_login_two_themes/constants/themes/theme_model.dart';
 import 'package:flutter_login_two_themes/data_layer/repos/auth/auth_repository.dart';
 import 'package:flutter_login_two_themes/logic_layer/auth/auth_cubit.dart';
+import 'package:flutter_login_two_themes/logic_layer/auth/auth_state.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
             final authCubit = AuthCubit(
               authRepository: AuthRepository(),
             );
-            // Check current auth state when app starts
+            // Check current auth state immediately when app starts
             authCubit.checkInitialAuthState();
             return authCubit;
           },
@@ -44,11 +45,15 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: Consumer<ThemeModel>(
-          builder: (context, ThemeModel themeNotifier, child) => MaterialApp(
-                theme: themeNotifier.isDark ? AppTheme.dark : AppTheme.light,
-                debugShowCheckedModeBanner: false,
-                onGenerateRoute: appRouter.generateRoute,
-              )),
+        builder: (context, ThemeModel themeNotifier, child) => MaterialApp(
+          title: 'Flutter Login Two Themes',
+          theme: themeNotifier.isDark ? AppTheme.dark : AppTheme.light,
+          debugShowCheckedModeBanner: false,
+          onGenerateRoute: appRouter.generateRoute,
+          // Use home as initial route, let the app handle auth state
+          initialRoute: '/home',
+        ),
+      ),
     );
   }
 }
