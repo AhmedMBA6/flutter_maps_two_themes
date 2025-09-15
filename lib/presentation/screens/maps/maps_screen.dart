@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
+import 'package:uuid/uuid.dart';
 import '../../../helpers/location_helper.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../logic_layer/auth/auth_cubit.dart';
-import '../../../logic_layer/auth/auth_state.dart';
+import '../../../logic_layer/maps/maps_cubit.dart';
+import '../../widgets/maps/maps_widgets.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -17,19 +19,22 @@ class MapsScreen extends StatefulWidget {
 class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   // Controllers
   final Completer<GoogleMapController> _mapController = Completer();
-  
+  final FloatingSearchBarController _searchController =
+      FloatingSearchBarController();
+
   // State
   Position? _currentPosition;
   bool _isLoading = true;
   bool _hasInitialized = false;
   String? _errorMessage;
-  
+  bool _isCenteringLocation = false;
+
   // Stream subscription
   StreamSubscription<Position>? _locationSubscription;
-  
+
   // Constants
   static const MarkerId _userMarkerId = MarkerId('user_location');
-  static const double _defaultZoom = 16.0;
+  static const double _defaultZoom = 17.0;
 
   @override
   void initState() {
@@ -42,6 +47,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _locationSubscription?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -55,41 +61,36 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         _errorMessage = null;
       });
 
-
       // Check permissions
       final hasPermission = await LocationHelper.hasLocationPermission();
       if (!hasPermission) {
-        _setError('Location permission required. Please enable location services.');
+        _setError(
+            'Location permission required. Please enable location services.');
         return;
       }
 
-
       // Get initial position with multiple attempts
       Position? position;
-      
+
       // First try cached position (fastest)
       position = await LocationHelper.getLastKnownPosition();
-      if (position != null) {
-      }
-      
+
       // If no cached position or it's too old, get fresh position
       if (position == null || _isPositionOld(position)) {
         position = await LocationHelper.getCurrentLocation(
           timeout: const Duration(seconds: 8),
         );
-        if (position != null) {
-        }
       }
 
       if (mounted && position != null) {
         _updatePosition(position, centerCamera: true);
       } else {
-        _setError('Unable to get your location. Please check your GPS settings.');
+        _setError(
+            'Unable to get your location. Please check your GPS settings.');
       }
 
       // Start location stream
       _startLocationStream();
-      
     } catch (e) {
       if (mounted) {
         _setError('Failed to initialize location services: $e');
@@ -101,7 +102,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   bool _isPositionOld(Position position) {
     final now = DateTime.now();
     final positionTime = position.timestamp;
-    
+
     final difference = now.difference(positionTime);
     return difference.inMinutes > 5;
   }
@@ -119,7 +120,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   void _startLocationStream() {
     _locationSubscription?.cancel();
     _locationSubscription = LocationHelper.getPositionStream(
-      distanceFilter: 10, // Update every 10 meters for better accuracy
+      distanceFilter: 10,
     ).listen(
       (position) {
         if (mounted) {
@@ -138,7 +139,6 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   void _updatePosition(Position position, {bool centerCamera = false}) {
     if (!mounted) return;
 
-
     setState(() {
       _currentPosition = position;
       _isLoading = false;
@@ -152,52 +152,94 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// Check if map controller is ready
+  bool get _isMapControllerReady => _mapController.isCompleted;
+
   /// Center camera on specific position
   Future<void> _centerCameraOnPosition(Position position) async {
     try {
-      
-      if (!_mapController.isCompleted) {
-        // Wait a bit for the controller to be ready
-        await Future.delayed(const Duration(milliseconds: 200));
+      // Check if controller is ready
+      if (!_isMapControllerReady) {
+        // Wait for controller to be ready with timeout
+        try {
+          await _mapController.future.timeout(
+            const Duration(seconds: 3),
+            onTimeout: () {
+              throw Exception('Map controller timeout');
+            },
+          );
+        } catch (e) {
+          _showMessage('Map is still loading. Please wait a moment.');
+          return;
+        }
       }
-      
+
       final controller = await _mapController.future;
       final latLng = LatLng(position.latitude, position.longitude);
-      
-      await controller.animateCamera(
+
+      // Use moveCamera instead of animateCamera for more reliable operation
+      await controller.moveCamera(
         CameraUpdate.newLatLngZoom(latLng, _defaultZoom),
       );
     } catch (e) {
-      _showMessage('Failed to center camera: $e');
+      // Handle specific platform exceptions
+      if (e.toString().contains('PlatformException')) {
+        _showMessage('Map operation failed. Please try again.');
+      } else {
+        _showMessage(
+            'Failed to center camera: ${e.toString().split(':').last.trim()}');
+      }
     }
   }
 
   /// Center camera on current user location
   Future<void> _centerOnUserLocation() async {
+    // Prevent multiple rapid taps
+    if (_isCenteringLocation) {
+      _showMessage('Already centering location...');
+      return;
+    }
+
     try {
-      
-      // First, try to use current cached position
-      if (_currentPosition != null) {
-        await _centerCameraOnPosition(_currentPosition!);
-        _showMessage('Centered on your location');
+      setState(() {
+        _isCenteringLocation = true;
+      });
+
+      // Check if we have a valid position
+      if (_currentPosition == null) {
+        _showMessage('Getting your location...');
+
+        // Try to get fresh location
+        final position = await LocationHelper.getCurrentLocation(
+          timeout: const Duration(seconds: 5),
+        );
+
+        if (mounted && position != null) {
+          _updatePosition(position, centerCamera: true);
+          _showMessage('Location updated and centered');
+        } else {
+          _showMessage(
+              'Unable to get current location. Please check your GPS.');
+        }
         return;
       }
 
-      // If no cached position, try to get fresh location
-      _showMessage('Getting fresh location...');
-      
-      final position = await LocationHelper.getCurrentLocation(
-        timeout: const Duration(seconds: 5),
-      );
-      
-      if (mounted && position != null) {
-        _updatePosition(position, centerCamera: true);
-        _showMessage('Location updated and centered');
-      } else {
-        _showMessage('Unable to get current location. Please check your GPS.');
-      }
+      // Use cached position if available
+      await _centerCameraOnPosition(_currentPosition!);
+      _showMessage('Centered on your location');
     } catch (e) {
-      _showMessage('Failed to center on location: $e');
+      if (e.toString().contains('PlatformException')) {
+        _showMessage('Map operation failed. Please try again.');
+      } else {
+        _showMessage(
+            'Failed to center on location: ${e.toString().split(':').last.trim()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCenteringLocation = false;
+        });
+      }
     }
   }
 
@@ -205,11 +247,11 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   Future<void> _refreshLocation() async {
     try {
       _showMessage('Refreshing location...');
-      
+
       final position = await LocationHelper.getCurrentLocation(
         timeout: const Duration(seconds: 8),
       );
-      
+
       if (mounted && position != null) {
         _updatePosition(position, centerCamera: true);
         _showMessage('Location refreshed and centered');
@@ -217,7 +259,12 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         _showMessage('Failed to refresh location. Please check your GPS.');
       }
     } catch (e) {
-      _showMessage('Failed to refresh location: $e');
+      if (e.toString().contains('PlatformException')) {
+        _showMessage('Map operation failed. Please try again.');
+      } else {
+        _showMessage(
+            'Failed to refresh location: ${e.toString().split(':').last.trim()}');
+      }
     }
   }
 
@@ -242,42 +289,6 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Build the map widget
-  Widget _buildMap() {
-    if (_currentPosition == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Getting your location...'),
-          ],
-        ),
-      );
-    }
-
-    final cameraPosition = CameraPosition(
-      target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-      zoom: _defaultZoom,
-    );
-
-    return GoogleMap(
-      initialCameraPosition: cameraPosition,
-      onMapCreated: (controller) {
-        if (!_mapController.isCompleted) {
-          _mapController.complete(controller);
-        }
-      },
-      myLocationEnabled: false, 
-      myLocationButtonEnabled: false, 
-      markers: _buildMarkers(),
-      compassEnabled: true,
-      zoomControlsEnabled: false,
-      mapToolbarEnabled: false,
-    );
-  }
-
   /// Build markers for the map
   Set<Marker> _buildMarkers() {
     if (_currentPosition == null) return {};
@@ -285,123 +296,72 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     return {
       Marker(
         markerId: _userMarkerId,
-        position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        position:
+            LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
         infoWindow: const InfoWindow(title: 'Your Location'),
+        flat: true,
+        zIndexInt: 1,
       ),
     };
   }
 
-  /// Build error widget
-  Widget _buildErrorWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.location_off,
-            size: 64,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _errorMessage ?? 'Location error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _initializeLocation,
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
+  /// Handle search query
+  void _handleSearchQuery(String query) {
+    final sessionToken = const Uuid().v4();
+
+    if (query.isNotEmpty) {
+      BlocProvider.of<MapsCubit>(context)
+          .emitPlaceSuggestions(query, sessionToken);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          // Handle sign out navigation
-          if (state is SignOutSuccess) {
-            Navigator.of(context).pushReplacementNamed('/auth');
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Maps'),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            actions: [
-              // Sign out button
-              IconButton(
-                onPressed: _signOut,
-                icon: const Icon(Icons.logout),
-                tooltip: 'Sign Out',
+      child: Scaffold(
+        drawer: const AppDrawer(),
+        body: RepaintBoundary(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Map or loading/error state
+              _isLoading
+                  ? const LoadingWidget()
+                  : _errorMessage != null
+                      ? MapErrorWidget(
+                          message: _errorMessage!,
+                          onRetry: _initializeLocation,
+                        )
+                      : MapWidget(
+                          currentPosition: _currentPosition,
+                          mapController: _mapController,
+                          markers: _buildMarkers(),
+                          defaultZoom: _defaultZoom,
+                        ),
+
+              // Floating search bar
+              MapFloatingSearchBar(
+                controller: _searchController,
+                onRecentSearches: () {
+                  // Handle recent searches
+                },
+                onSavedPlaces: () {
+                  // Handle saved places
+                },
+                onQueryChanged: _handleSearchQuery,
               ),
             ],
           ),
-          body: _isLoading 
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Initializing map...'),
-                  ],
-                ),
-              )
-            : _errorMessage != null
-              ? _buildErrorWidget()
-              : _buildMap(),
-          floatingActionButton: _currentPosition != null ? GestureDetector(
-            onLongPress: _refreshLocation,
-            child: FloatingActionButton(
-              onPressed: _centerOnUserLocation,
-              tooltip: 'Center on my location (long press to refresh)',
-              child: const Icon(Icons.my_location),
-            ),
-          ) : null,
         ),
+        floatingActionButton: _currentPosition != null
+            ? LocationFloatingActionButton(
+                onPressed: _centerOnUserLocation,
+                onLongPress: _refreshLocation,
+                isLoading: _isCenteringLocation,
+              )
+            : null,
       ),
     );
-  }
-
-  /// Sign out the user
-  Future<void> _signOut() async {
-    try {
-      // Show confirmation dialog
-      final shouldSignOut = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Sign Out'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldSignOut == true) {
-        // Get the auth cubit and sign out
-        final authCubit = context.read<AuthCubit>();
-        await authCubit.signOut();
-        
-        // Navigation will be handled by the BlocListener in InitialRouteHandler
-        _showMessage('Signed out successfully');
-      }
-    } catch (e) {
-      _showMessage('Failed to sign out: $e');
-    }
   }
 }

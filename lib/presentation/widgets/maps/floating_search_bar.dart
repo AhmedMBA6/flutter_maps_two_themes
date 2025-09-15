@@ -1,0 +1,83 @@
+import 'package:flutter/material.dart';
+import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
+import 'package:provider/provider.dart';
+import '../../../constants/themes/app_colors.dart';
+import '../../../constants/themes/theme_model.dart';
+import 'circular_action_button.dart';
+import 'search_results_builder.dart';
+
+class MapFloatingSearchBar extends StatelessWidget {
+  final FloatingSearchBarController controller;
+  final VoidCallback onRecentSearches;
+  final VoidCallback onSavedPlaces;
+  final Function(String) onQueryChanged;
+
+  const MapFloatingSearchBar({
+    super.key,
+    required this.controller,
+    required this.onRecentSearches,
+    required this.onSavedPlaces,
+    required this.onQueryChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final themeModel = Provider.of<ThemeModel>(context);
+    final isDark = themeModel.isDark;
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    
+    return FloatingSearchBar(
+      hint: 'Search places...',
+      controller: controller,
+      elevation: 6,
+      hintStyle: TextStyle(
+        fontSize: 18,
+        color: isDark ? AppColors.gray400 : AppColors.gray500,
+      ),
+      queryStyle: TextStyle(
+        fontSize: 16,
+        color: isDark ? AppColors.foregroundDark : AppColors.foregroundLight,
+      ),
+      border: BorderSide(
+        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        width: 1.0,
+      ),
+      margins: const EdgeInsets.fromLTRB(15, 25, 15, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      height: isPortrait ? 56 : 48,
+      iconColor: isDark ? AppColors.gray400 : AppColors.gray600,
+      scrollPadding: const EdgeInsets.only(top: 16, bottom: 56),
+      transitionDuration: const Duration(milliseconds: 400),
+      transitionCurve: Curves.easeInOut,
+      physics: const BouncingScrollPhysics(),
+      axisAlignment: isPortrait ? 0.0 : -1.0,
+      openAxisAlignment: 0.0,
+      width: isPortrait ? 600 : 500,
+      debounceDelay: const Duration(milliseconds: 150),
+      backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+      onFocusChanged: (isFocused) {
+        // Handle focus changes
+      },
+      onQueryChanged: onQueryChanged,
+      transition: CircularFloatingSearchBarTransition(),
+      actions: [
+        FloatingSearchBarAction(
+          showIfClosed: false,
+          child: CircularActionButton(
+            icon: Icons.place,
+            onPressed: () {
+              // Handle place action
+            },
+          ),
+        ),
+      ],
+      builder: (context, transition) {
+        return SearchResultsBuilder(
+          isDark: isDark,
+          onRecentSearches: onRecentSearches,
+          onSavedPlaces: onSavedPlaces,
+        );
+      },
+    );
+  }
+}
