@@ -26,5 +26,4 @@ class AppStrings {
   static const favorites = 'Save Favorites';
 
   // Maps
-  static const googleApiKey = 'AIzaSyChLjx7CjqxLIiJRo7mqN-isLF_Ho8H-bs';
 }

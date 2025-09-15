@@ -1,18 +1,19 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_login_two_themes/app_router.dart';
 import 'package:flutter_login_two_themes/constants/themes/app_theme.dart';
 import 'package:flutter_login_two_themes/constants/themes/theme_model.dart';
 import 'package:flutter_login_two_themes/data_layer/repos/auth/auth_repository.dart';
 import 'package:flutter_login_two_themes/logic_layer/auth/auth_cubit.dart';
-import 'package:flutter_login_two_themes/logic_layer/auth/auth_state.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
