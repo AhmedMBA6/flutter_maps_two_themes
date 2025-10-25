@@ -7,15 +7,15 @@ import 'loading_widget.dart';
 class MapWidget extends StatelessWidget {
   final Position? currentPosition;
   final Completer<GoogleMapController> mapController;
-  final Set<Marker> markers;
   final double defaultZoom;
+  final Set<Marker> markers;
 
   const MapWidget({
     super.key,
     required this.currentPosition,
     required this.mapController,
-    required this.markers,
     required this.defaultZoom,
+    required this.markers,
   });
 
   @override
@@ -26,11 +26,14 @@ class MapWidget extends StatelessWidget {
 
     final cameraPosition = CameraPosition(
       target: LatLng(currentPosition!.latitude, currentPosition!.longitude),
+      bearing: 0,
+      tilt: 0,
       zoom: defaultZoom,
     );
 
     return RepaintBoundary(
       child: GoogleMap(
+        markers: markers,
         initialCameraPosition: cameraPosition,
         onMapCreated: (controller) {
           // Ensure we only complete the completer once
@@ -38,9 +41,12 @@ class MapWidget extends StatelessWidget {
             mapController.complete(controller);
           }
         },
-        myLocationEnabled: false, 
-        myLocationButtonEnabled: false, 
-        markers: markers,
+        onTap: (pos) {
+          print("🗺️ Map tapped at: $pos");
+          print("📍 Current markers count: ${markers.length}");
+        },
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
         compassEnabled: true,
         zoomControlsEnabled: false,
         mapToolbarEnabled: false,
