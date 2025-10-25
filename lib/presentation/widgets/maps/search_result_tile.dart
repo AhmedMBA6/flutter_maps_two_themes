@@ -2,27 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_login_two_themes/data_layer/models/map/place_suggestion.dart';
 import 'package:flutter_login_two_themes/logic_layer/maps/maps_cubit.dart';
+import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
+import 'package:uuid/uuid.dart';
 
 class SearchResultTile extends StatelessWidget {
+  final FloatingSearchBarController controller;
   const SearchResultTile({
     super.key,
+    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
+    late PlaceSuggestion placeSuggestion;
     return BlocBuilder<MapsCubit, MapsState>(builder: (context, state) {
       if (state is PlaceSuggestionsLoaded) {
         final suggestions = state.suggestions;
-        return ListView.builder(
-          shrinkWrap: true,
-          itemCount: suggestions.length,
-          physics: const ClampingScrollPhysics(),
-          itemBuilder: (context, index) {
-            return PlaceItem(
-              suggestion: suggestions[index],
-            );
-          },
-        );
+        if (suggestions.isNotEmpty) {
+          return ListView.builder(
+            shrinkWrap: true,
+            itemCount: suggestions.length,
+            physics: const ClampingScrollPhysics(),
+            itemBuilder: (context, index) {
+              return InkWell(
+                onTap: () async {
+                  placeSuggestion = suggestions[index];
+                  // Fetch details before closing
+
+                  getSelectedPlaceDetails(context, placeSuggestion);
+
+                  // Small delay before closing to let Cubit emit
+                  await Future.delayed(const Duration(milliseconds: 250));
+
+                  controller.close();
+                },
+                child: PlaceItem(
+                  suggestion: suggestions[index],
+                ),
+              );
+            },
+          );
+        } else {
+          return const SizedBox.shrink();
+        }
+      }
+      if (state is PlaceSuggestionsCleared || state is MapsInitial) {
+        return const SizedBox.shrink();
       } else {
         return const SizedBox.shrink();
       }
@@ -72,7 +97,7 @@ class PlaceItem extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: subTitle.substring(2),
+                    text: subTitle,
                     style: TextStyle(
                       fontSize: 14,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -87,4 +112,12 @@ class PlaceItem extends StatelessWidget {
       ),
     );
   }
+}
+
+void getSelectedPlaceDetails(
+    BuildContext context, PlaceSuggestion placeSuggestion) {
+  final sessionToken = const Uuid().v4();
+  context
+      .read<MapsCubit>()
+      .emitPlaceDetails(placeSuggestion.placeId, sessionToken);
 }

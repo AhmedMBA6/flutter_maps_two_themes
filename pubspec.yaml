@@ -31,6 +31,7 @@ dependencies:
   cloud_firestore: ^5.6.12
   cupertino_icons: ^1.0.8
   dio: ^5.9.0
+  pretty_dio_logger: ^1.4.0
   equatable: ^2.0.5
   firebase_auth: ^5.7.0
   firebase_core: ^3.15.2

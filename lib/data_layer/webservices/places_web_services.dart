@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 class PlacesWebServices {
   late Dio dio;
   static const String baseUrl = "https://places.googleapis.com/v1";
   static const String getPlacesUrl = "$baseUrl/places:autocomplete";
+  static const String getPlaceDetailsUrl = "$baseUrl/places/";
 
   PlacesWebServices() {
     BaseOptions options = BaseOptions(
@@ -14,6 +17,25 @@ class PlacesWebServices {
       receiveDataWhenStatusError: true,
     );
     dio = Dio(options);
+
+    if (kDebugMode) {
+      dio.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseHeader: false,
+          responseBody: true,
+          logPrint: (obj) {
+            final text = obj.toString().replaceAll(
+                RegExp(r'X-Goog-Api-Key:.*'), 'X-Goog-Api-Key: [HIDDEN]');
+            print(text);
+          },
+          error: true,
+          compact: true,
+          maxWidth: 120,
+        ),
+      );
+    }
   }
 
   Future<List<dynamic>> fetchSuggestions(
@@ -53,6 +75,34 @@ class PlacesWebServices {
       }
     } catch (e) {
       throw Exception("Error fetching suggestions: $e");
+    }
+  }
+
+  Future<dynamic> fetchPlaceDetails(String placeId, String sessionToken) async {
+    try {
+      final apiKey = dotenv.env['GOOGLE_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception("Google API Key not found in .env");
+      }
+
+      final response = await dio.get(
+        "$getPlaceDetailsUrl$placeId",
+        options: Options(headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Session-Token": sessionToken,
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask": '*',
+        },
+      ));
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception("Failed to load place details: ${response.statusCode}");
+      }
+    } catch (e) {
+      return Future.error("Place location error: ",
+          StackTrace.fromString(('this is its trace')));
     }
   }
 }
