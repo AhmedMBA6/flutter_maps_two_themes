@@ -1,64 +1,64 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'loading_widget.dart';
+import '../../../logic_layer/maps/maps_cubit.dart';
 
-class MapWidget extends StatelessWidget {
-  final Position? currentPosition;
-  final Completer<GoogleMapController> mapController;
+class MapWidget extends StatefulWidget {
   final double defaultZoom;
-  final Set<Marker> markers;
 
   const MapWidget({
     super.key,
-    required this.currentPosition,
-    required this.mapController,
     required this.defaultZoom,
-    required this.markers,
   });
 
   @override
+  State<MapWidget> createState() => _MapWidgetState();
+}
+
+class _MapWidgetState extends State<MapWidget> {
+  
+
+  @override
   Widget build(BuildContext context) {
-    if (currentPosition == null) {
-      return const LoadingWidget();
-    }
+    final cubit = context.read<MapsCubit>();
 
-    final cameraPosition = CameraPosition(
-      target: LatLng(currentPosition!.latitude, currentPosition!.longitude),
-      bearing: 0,
-      tilt: 0,
-      zoom: defaultZoom,
-    );
+    // Use last known position from Cubit (set when location loads)
+    final initialLatLng = cubit.lastKnownPosition != null
+        ? LatLng(cubit.lastKnownPosition!.latitude,
+            cubit.lastKnownPosition!.longitude)
+        : const LatLng(30.0444, 31.2357); // Cairo fallback
 
-    return RepaintBoundary(
-      child: GoogleMap(
-        markers: markers,
-        initialCameraPosition: cameraPosition,
-        onMapCreated: (controller) {
-          // Ensure we only complete the completer once
-          if (!mapController.isCompleted) {
-            mapController.complete(controller);
-          }
-        },
-        onTap: (pos) {
-          print("🗺️ Map tapped at: $pos");
-          print("📍 Current markers count: ${markers.length}");
-        },
-        myLocationEnabled: true,
-        myLocationButtonEnabled: false,
-        compassEnabled: true,
-        zoomControlsEnabled: false,
-        mapToolbarEnabled: false,
-        // Performance optimizations
-        liteModeEnabled: false,
-        tiltGesturesEnabled: false,
-        rotateGesturesEnabled: false,
-        // Additional stability options
-        indoorViewEnabled: false,
-        trafficEnabled: false,
-        buildingsEnabled: true,
-      ),
+    return BlocConsumer<MapsCubit, MapsState>(
+      listener: (context, state) async {
+                  final cubit = context.read<MapsCubit>();
+
+                  if (state is MapsLocationLoaded && state.shouldCenterCamera) {
+                    await cubit.centerCameraOnPosition(state.position);
+                  }
+      },
+      buildWhen: (prev, curr) => curr is MapMarkersUpdated,
+      builder: (context, state) {
+        final markers = (state is MapMarkersUpdated)
+            ? state.markers
+            : cubit.placeMarkers;
+
+        return GoogleMap(
+          initialCameraPosition:
+              CameraPosition(target: initialLatLng, zoom: widget.defaultZoom),
+          myLocationEnabled: true,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          compassEnabled: true,
+          markers: markers,
+          onMapCreated: (controller) {
+              cubit.setMapController(controller);
+            },
+          onTap: (pos) {
+            debugPrint("🗺️ Map tapped at: $pos");
+            debugPrint("📍 Current markers count: ${markers.length}");
+          },
+        );
+      },
     );
   }
 }

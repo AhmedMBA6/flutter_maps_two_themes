@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -35,8 +36,11 @@ class MapFloatingSearchBar extends StatelessWidget {
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
 
+    
+
     return BlocListener<MapsCubit, MapsState>(
   listener: (context, state) async {
+    final cubit = context.read<MapsCubit>();
     if (state is PlaceDetailsLoaded) {
       final details = state.placeDetails;
 
@@ -45,7 +49,6 @@ class MapFloatingSearchBar extends StatelessWidget {
         details.location.latitude,
         details.location.longitude,
       );
-        
 
       // ✅ Add marker to map via provided callback (avoid calling a non-callable cubit member)
       final marker = Marker(
@@ -57,17 +60,19 @@ class MapFloatingSearchBar extends StatelessWidget {
         ),
         onTap: onTap,
       );
-      context.read<MapsCubit>().setSearchedPlaceMarker(marker);
+      
+      cubit.setSearchedPlaceMarker(marker, moveCamera: true);
 
-      // ✅ Clear suggestions
-      context.read<MapsCubit>().emitClearSuggestions();
-
-      print('📍 Marker added for ${details.name} at ${latLng.latitude}, ${latLng.longitude}');
+      if (kDebugMode) {
+        print('📍 Marker added for ${details.name} at ${latLng.latitude}, ${latLng.longitude}');
+      }
     }
 
     // Optional: handle error or loading states
     if (state is MapsError) {
-      print('❌ Error state: ${state.message}');
+      if (kDebugMode) {
+        print('❌ Error state: ${state.message}');
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load place details: ${state.message}')),
       );
@@ -121,7 +126,6 @@ class MapFloatingSearchBar extends StatelessWidget {
     ],
     builder: (context, transition) {
       return SearchResultsBuilder(
-        onTap: onTap,
         controller: controller,
         mapController: mapController,
         isDark: isDark,

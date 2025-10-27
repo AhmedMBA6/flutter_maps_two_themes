@@ -28,7 +28,9 @@ class PlacesWebServices {
           logPrint: (obj) {
             final text = obj.toString().replaceAll(
                 RegExp(r'X-Goog-Api-Key:.*'), 'X-Goog-Api-Key: [HIDDEN]');
-            print(text);
+            if (kDebugMode) {
+              print(text);
+            }
           },
           error: true,
           compact: true,

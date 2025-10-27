@@ -16,7 +16,6 @@ class SearchResultsBuilder extends StatefulWidget {
   final VoidCallback onSavedPlaces;
   final Completer<GoogleMapController> mapController;
   final FloatingSearchBarController controller;
-  final void Function() onTap;
 
 
   const SearchResultsBuilder({
@@ -26,7 +25,6 @@ class SearchResultsBuilder extends StatefulWidget {
     required this.onSavedPlaces,
     required this.mapController,
     required this.controller,
-     required this.onTap,
   });
 
   @override
@@ -35,9 +33,6 @@ class SearchResultsBuilder extends StatefulWidget {
 
 class _SearchResultsBuilderState extends State<SearchResultsBuilder> {
   late PlaceDetails selectedPlace;
-  
-
-  late CameraPosition searchPlaceCameraPosition;
 
   @override
   Widget build(BuildContext context) {

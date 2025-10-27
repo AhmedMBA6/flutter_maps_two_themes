@@ -18,10 +18,6 @@ class MapsError extends MapsState {
   MapsError(this.message);
 }
 
-class MapsSuggestionsLoaded extends MapsState {
-  final List<PlaceSuggestion> suggestions;
-  MapsSuggestionsLoaded(this.suggestions);
-}
 
 class MapsMessage extends MapsState {
   final String message;
@@ -35,7 +31,7 @@ class MapMarkersUpdated extends MapsState {
 
 
 class PlaceSuggestionsLoaded extends MapsState {
-  final List<dynamic> suggestions;
+  final List<PlaceSuggestion> suggestions;
 
   PlaceSuggestionsLoaded(this.suggestions);
 }
