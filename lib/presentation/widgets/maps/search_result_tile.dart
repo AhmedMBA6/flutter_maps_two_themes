@@ -32,7 +32,7 @@ class SearchResultTile extends StatelessWidget {
                   getSelectedPlaceDetails(context, placeSuggestion);
 
                   // Small delay before closing to let Cubit emit
-                  await Future.delayed(const Duration(milliseconds: 250));
+                  await Future.delayed(const Duration(milliseconds: 100));
 
                   controller.close();
                 },
