@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCj2awpQw05-tUjWMrXn_xKbmDIN6s2etc',
-    appId: '1:73379429616:android:468c0eadd6cd1a2b855635',
+    appId: '1:73379429616:android:a8e8861e4c364681855635',
     messagingSenderId: '73379429616',
     projectId: 'flutter-maps-d06fb',
     storageBucket: 'flutter-maps-d06fb.firebasestorage.app',
@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAVnl2RMzU1VHSmlfCGVAAtjLXISRVr5pM',
-    appId: '1:73379429616:ios:f3d0db503ad93c87855635',
+    appId: '1:73379429616:ios:710100dbc5054e43855635',
     messagingSenderId: '73379429616',
     projectId: 'flutter-maps-d06fb',
     storageBucket: 'flutter-maps-d06fb.firebasestorage.app',
-    iosBundleId: 'com.example.flutterLoginTwoThemes',
+    iosBundleId: 'com.smartmap.guide',
   );
 }

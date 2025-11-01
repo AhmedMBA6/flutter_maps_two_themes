@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:73379429616:android:468c0eadd6cd1a2b855635",
+        "mobilesdk_app_id": "1:73379429616:android:a8e8861e4c364681855635",
         "android_client_info": {
-          "package_name": "com.example.flutter_login_two_themes"
+          "package_name": "com.smartmap.guide"
         }
       },
       "oauth_client": [],
