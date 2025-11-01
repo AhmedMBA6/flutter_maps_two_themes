@@ -10,14 +10,10 @@ abstract class AuthState extends Equatable {
 }
 
 // Initial state - app just started
-class AuthInitial extends AuthState {
-  const AuthInitial();
-}
+class AuthInitial extends AuthState {}
 
 // Loading state - operation in progress
-class AuthLoading extends AuthState {
-  const AuthLoading();
-}
+class AuthLoading extends AuthState {}
 
 // Success states
 class AuthSuccess extends AuthState {

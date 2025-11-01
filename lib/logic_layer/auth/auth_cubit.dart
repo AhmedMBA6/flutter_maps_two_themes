@@ -9,39 +9,12 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit({required AuthRepositoryInterface authRepository})
       : _authRepository = authRepository,
-        super(const AuthInitial());
+        super(AuthInitial());
 
   // Getters for easy access to repository properties
   bool get isSignedIn => _authRepository.isSignedIn;
   User? get currentUser => _authRepository.currentUser;
   Stream<User?> get authStateChanges => _authRepository.authStateChanges;
-
-  // ==================== INITIALIZATION ====================
-
-  /// Check initial authentication state
-  Future<void> checkInitialAuthState() async {
-    try {
-      emit(const AuthLoading());
-      
-      final currentUser = _authRepository.currentUser;
-      if (currentUser != null) {
-        // User is already signed in, get their data
-        final userData = await _authRepository.getUserData(currentUser.uid);
-        if (userData != null) {
-          emit(AuthSuccess(userData));
-        } else {
-          // User exists in Firebase Auth but not in Firestore
-          emit(const AuthError('User data not found. Please sign in again.'));
-          await _authRepository.signOut();
-        }
-      } else {
-        // No user signed in
-        emit(const AuthInitial());
-      }
-    } catch (e) {
-      emit(AuthError('Failed to check authentication state: ${e.toString()}'));
-    }
-  }
 
   // ==================== SIGN UP METHODS ====================
 
@@ -55,7 +28,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     try {
       Logger.info('AuthCubit: Starting sign up process for email: $email');
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate input data
       final validationErrors = AuthValidationService.validateRegistration(
@@ -116,7 +89,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String smsCode,
   }) async {
     try {
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate input data
       final validationErrors = AuthValidationService.validateRegistration(
@@ -157,7 +130,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
   }) async {
     try {
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate input data
       final validationErrors = AuthValidationService.validateSignIn(
@@ -193,7 +166,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     try {
       Logger.info('AuthCubit: Sending OTP for phone: $phoneNumber, country: $countryCode');
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate phone number
       final validationErrors = AuthValidationService.validatePhoneSignIn(
@@ -243,7 +216,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     try {
       Logger.info('AuthCubit: Verifying OTP for phone sign-in, phone: $phoneNumber');
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate OTP
       final validationErrors = AuthValidationService.validateOTP(smsCode);
@@ -298,7 +271,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     try {
       Logger.info('AuthCubit: Sending OTP for sign-up, phone: $phoneNumber, country: $countryCode');
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate phone number
       final validationErrors = AuthValidationService.validatePhoneSignIn(
@@ -351,7 +324,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     try {
       Logger.info('AuthCubit: Verifying OTP for sign-up, phone: $phoneNumber');
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       // Validate OTP
       final validationErrors = AuthValidationService.validateOTP(smsCode);
@@ -387,7 +360,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Send email verification
   Future<void> sendEmailVerification() async {
     try {
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       await _authRepository.sendEmailVerification();
       emit(const EmailVerificationSent('Email verification sent! Please check your inbox.'));
@@ -425,7 +398,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Update user data
   Future<void> updateUserData(String uid, Map<String, dynamic> data) async {
     try {
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       await _authRepository.updateUserData(uid, data);
       
@@ -441,7 +414,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Sign out
   Future<void> signOut() async {
     try {
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       await _authRepository.signOut();
       emit(const SignOutSuccess('Signed out successfully'));
@@ -453,7 +426,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Delete account
   Future<void> deleteAccount() async {
     try {
-      emit(const AuthLoading());
+      emit(AuthLoading());
 
       await _authRepository.deleteAccount();
       emit(const SignOutSuccess('Account deleted successfully'));
@@ -479,18 +452,6 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       emit(AuthError('Failed to check user existence: ${e.toString()}'));
       return false;
-    }
-  }
-
-  /// Reset to initial state
-  void resetToInitial() {
-    emit(const AuthInitial());
-  }
-
-  /// Clear error state
-  void clearError() {
-    if (state is AuthError || state is ValidationError) {
-      emit(const AuthInitial());
     }
   }
 }

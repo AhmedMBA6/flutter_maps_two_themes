@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 class PlacesWebServices {
@@ -8,6 +9,9 @@ class PlacesWebServices {
   static const String baseUrl = "https://places.googleapis.com/v1";
   static const String getPlacesUrl = "$baseUrl/places:autocomplete";
   static const String getPlaceDetailsUrl = "$baseUrl/places/";
+  static const String directionsUrl =
+      "https://routes.googleapis.com/directions/v2:computeRoutes";
+  final apiKey = dotenv.env['GOOGLE_API_KEY'];
 
   PlacesWebServices() {
     BaseOptions options = BaseOptions(
@@ -43,8 +47,7 @@ class PlacesWebServices {
   Future<List<dynamic>> fetchSuggestions(
       String place, String sessionToken) async {
     try {
-      final apiKey = dotenv.env['GOOGLE_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey == null || apiKey!.isEmpty) {
         throw Exception("Google API Key not found in .env");
       }
 
@@ -82,20 +85,19 @@ class PlacesWebServices {
 
   Future<dynamic> fetchPlaceDetails(String placeId, String sessionToken) async {
     try {
-      final apiKey = dotenv.env['GOOGLE_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
+      if (apiKey == null || apiKey!.isEmpty) {
         throw Exception("Google API Key not found in .env");
       }
 
-      final response = await dio.get(
-        "$getPlaceDetailsUrl$placeId",
-        options: Options(headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Session-Token": sessionToken,
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": '*',
-        },
-      ));
+      final response = await dio.get("$getPlaceDetailsUrl$placeId",
+          options: Options(
+            headers: {
+              "Content-Type": "application/json",
+              "X-Goog-Session-Token": sessionToken,
+              "X-Goog-Api-Key": apiKey,
+              "X-Goog-FieldMask": 'id,displayName,location,formattedAddress',
+            },
+          ));
 
       if (response.statusCode == 200) {
         return response.data;
@@ -105,6 +107,62 @@ class PlacesWebServices {
     } catch (e) {
       return Future.error("Place location error: ",
           StackTrace.fromString(('this is its trace')));
+    }
+  }
+
+  Future<dynamic> fetchDirections(LatLng origin, LatLng destination) async {
+    try {
+      if (apiKey == null || apiKey!.isEmpty) {
+        throw Exception("Google API Key not found in .env");
+      }
+      Response response = await dio.post(
+        directionsUrl,
+        data: {
+          "origin": {
+            "location": {
+              "latLng": {
+                "latitude": origin.latitude,
+                "longitude": origin.longitude
+              }
+            }
+          },
+          "destination": {
+            "location": {
+              "latLng": {
+                "latitude": destination.latitude,
+                "longitude": destination.longitude
+              }
+            }
+          },
+          "travelMode": "DRIVE",
+          "routingPreference": "TRAFFIC_AWARE",
+          "computeAlternativeRoutes": false,
+          "routeModifiers": {
+            "avoidTolls": false,
+            "avoidHighways": false,
+            "avoidFerries": false
+          },
+          "languageCode": "en-US",
+          "units": "METRIC"
+        },
+        options: Options(
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask":
+                // "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
+                "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.startLocation,routes.legs.endLocation,routes.legs.distanceMeters,routes.legs.duration,routes.travelAdvisory,routes.legs.steps.polyline.encodedPolyline"
+          },
+        ),
+      );
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception("Failed to load place details: ${response.statusCode}");
+      }
+    } catch (error) {
+      return Future.error(
+          "Directions ERROR: ", StackTrace.fromString(("this is its trace")));
     }
   }
 }
