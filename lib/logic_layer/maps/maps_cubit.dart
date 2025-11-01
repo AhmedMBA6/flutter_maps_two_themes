@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_login_two_themes/data_layer/models/map/place_directions.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -56,7 +57,7 @@ class MapsCubit extends Cubit<MapsState> {
         emit(MapsLocationLoaded(position, shouldCenterCamera: true));
         _startLocationStream();
       } else {
-        emit(MapsError('Unable to fetch location.'));
+        // emit(MapsError('Unable to fetch location.'));
       }
     } catch (e) {
       emit(MapsError('Failed to init location: $e'));
@@ -117,27 +118,26 @@ class MapsCubit extends Cubit<MapsState> {
     }
   }
 
-
   Future<void> addCurrentLocationMarker(Position position) async {
-  try {
-    final userMarker = Marker(
-      markerId: const MarkerId('user_location'),
-      position: LatLng(position.latitude, position.longitude),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-      infoWindow: const InfoWindow(title: 'Your Location'),
-      flat: true,
-    );
+    try {
+      final userMarker = Marker(
+        markerId: const MarkerId('user_location'),
+        position: LatLng(position.latitude, position.longitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        infoWindow: const InfoWindow(title: 'Your Location'),
+        flat: true,
+      );
 
-    addToMarkers(userMarker, categoryPrefix: 'user_location');
+      addToMarkers(userMarker, categoryPrefix: 'user_location');
 
-    if (kDebugMode) {
-      print("📍 Added user location marker at: ${position.latitude}, ${position.longitude}");
+      if (kDebugMode) {
+        print(
+            "📍 Added user location marker at: ${position.latitude}, ${position.longitude}");
+      }
+    } catch (e) {
+      emit(MapsError('Failed to add user marker: $e'));
     }
-  } catch (e) {
-    emit(MapsError('Failed to add user marker: $e'));
   }
-}
-
 
   Future<void> setSearchedPlaceMarker(
     Marker searched, {
@@ -145,6 +145,7 @@ class MapsCubit extends Cubit<MapsState> {
     double zoom = 17,
   }) async {
     try {
+      placeMarkers.clear();
       //  Move camera first (if requested)
       if (moveCamera) {
         await centerCameraOnLatLng(searched.position, zoom: zoom);
@@ -175,7 +176,7 @@ class MapsCubit extends Cubit<MapsState> {
     }
   }
 
- /// Handle search query
+  /// Handle search query
   void handleSearchQuery(String query) {
     final sessionToken = const Uuid().v4();
     if (query.isNotEmpty) {
@@ -212,6 +213,15 @@ class MapsCubit extends Cubit<MapsState> {
     } catch (e) {
       emit(MapsError('Failed to load place details: $e'));
     }
+  }
+
+  // ───────────────────────────────────────────────
+  // MARK:  PlaceDirections
+  // ───────────────────────────────────────────────
+  void emitPlaceDirections(LatLng origin, LatLng destination) {
+    mapsRepository.fetchDirections(origin, destination).then((directions) {
+      emit(DirectionsLoaded(directions));
+    });
   }
 
   // ───────────────────────────────────────────────

@@ -24,6 +24,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   static Position? _currentPosition;
   bool _isCenteringLocation = false;
   late Marker currentLocationMarker;
+  
 
   @override
   void initState() {
@@ -56,13 +57,8 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                   controller: _searchController,
                   onRecentSearches: () {},
                   onSavedPlaces: () {},
-                  onQueryChanged:mapsCubit.handleSearchQuery,
+                  onQueryChanged: mapsCubit.handleSearchQuery,
                   mapController: _mapController,
-                  onTap: () async {
-                    final position = await Geolocator.getCurrentPosition();
-                    mapsCubit
-                        .addCurrentLocationMarker(position);
-                  },
                 ),
               ],
             ),
@@ -77,8 +73,8 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                   _isCenteringLocation = false;
                 });
               },
-              onLongPress: (){},
-              isLoading:_isCenteringLocation,
+              onLongPress: () {},
+              isLoading: _isCenteringLocation,
               currentPosition: _currentPosition)),
     );
   }
